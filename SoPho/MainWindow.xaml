@@ -6,13 +6,17 @@
     <Window.Resources>
         <src:FacebookUserSettingCollection x:Key="users"/>
     </Window.Resources>
+    <Window.CommandBindings>
+        <CommandBinding Command="Open" Executed="ShowUserSetingsExecuted" />
+    </Window.CommandBindings>
 
     <Grid>
         <ListBox Name="lsUsers" ItemsSource="{StaticResource users}" Margin="0,68,0,0">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Button >
+                        <Button Command="Open"  CommandParameter="{Binding}">
+                            
                             <TextBlock>
 <TextBlock.Text>
     <MultiBinding StringFormat="Edit {0}">

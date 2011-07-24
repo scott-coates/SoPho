@@ -13,6 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using SoPho.Properties;
 using Facebook;
+using SoPho.Models;
 
 namespace SoPho
 {
@@ -54,6 +55,12 @@ namespace SoPho
                     MessageBox.Show(fbDialog.Result.ErrorDescription);
                 }
             }
+        }
+
+        private void ShowUserSetingsExecuted(object sender, ExecutedRoutedEventArgs e)
+        {
+            MessageBox.Show("Hey, I'm some help.");
+            e.Handled = true;
         }
     }
 }

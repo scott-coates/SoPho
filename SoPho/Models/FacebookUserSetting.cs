@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections.ObjectModel;
 
 namespace SoPho.Models
 {
@@ -10,5 +11,6 @@ namespace SoPho.Models
     {
         public string AccessToken { get; set; }
         public string Name { get; set; }
+        public ObservableCollection<FacebookPictureSetting> PictureSettings { get; set; }
     }
 }
