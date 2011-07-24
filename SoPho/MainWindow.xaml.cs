@@ -46,8 +46,9 @@ namespace SoPho
 
                     dynamic result = fb.Get("/me");
                     string name = result.name;
+                    string id = result.id;
 
-                    Settings.Default.FacebookUsersSettings.Add(new Models.FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, Name = name });
+                    Settings.Default.FacebookUsersSettings.Add(new Models.FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, Name = name, UserId = id });
                     Settings.Default.Save();
                 }
                 else
