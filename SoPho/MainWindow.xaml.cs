@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SoPho.Properties;
 
 namespace SoPho
 {
@@ -22,6 +23,9 @@ namespace SoPho
         public MainWindow()
         {
             InitializeComponent();
+            Settings.Default.FacebookUsersSettings = new Models.FacebookUserSettingCollection();
+            Settings.Default.FacebookUsersSettings.Add(new Models.FacebookUserSetting { AccessToken = "token", Name = "MyName" });
+            Settings.Default.Save();
         }
     }
 }
