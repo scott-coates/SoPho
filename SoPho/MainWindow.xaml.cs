@@ -26,6 +26,7 @@ namespace SoPho
             Settings.Default.FacebookUsersSettings = new Models.FacebookUserSettingCollection();
             Settings.Default.FacebookUsersSettings.Add(new Models.FacebookUserSetting { AccessToken = "token", Name = "MyName" });
             Settings.Default.Save();
+            lsUsers.ItemsSource = Settings.Default.FacebookUsersSettings;
         }
     }
 }
