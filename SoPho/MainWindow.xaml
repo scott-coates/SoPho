@@ -6,8 +6,25 @@
     <Window.Resources>
         <src:FacebookUserSettingCollection x:Key="users"/>
     </Window.Resources>
+
     <Grid>
-        <ListBox Name="lsUsers" ItemsSource="{StaticResource users}" Width="250" Margin="0,5,0,10" 
-       DisplayMemberPath="Name"/>
+        <ListBox Name="lsUsers" ItemsSource="{StaticResource users}" Margin="0,68,0,0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Button >
+                            <TextBlock>
+<TextBlock.Text>
+    <MultiBinding StringFormat="Edit {0}">
+        <Binding Path="Name"/>
+    </MultiBinding>
+</TextBlock.Text>
+                            </TextBlock>
+                        </Button>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Content="Add User" Height="23" HorizontalAlignment="Left" Margin="390,31,0,0" Name="button1" VerticalAlignment="Top" Width="101" Click="button1_Click" />
     </Grid>
 </Window>

@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using SoPho.Properties;
+using Facebook;
 
 namespace SoPho
 {
@@ -23,10 +24,36 @@ namespace SoPho
         public MainWindow()
         {
             InitializeComponent();
-            Settings.Default.FacebookUsersSettings = new Models.FacebookUserSettingCollection();
-            Settings.Default.FacebookUsersSettings.Add(new Models.FacebookUserSetting { AccessToken = "token", Name = "MyName" });
-            Settings.Default.Save();
+            if (Settings.Default.FacebookUsersSettings == null)
+            {
+                Settings.Default.FacebookUsersSettings = new Models.FacebookUserSettingCollection();
+            }
+
             lsUsers.ItemsSource = Settings.Default.FacebookUsersSettings;
+        }
+
+        private void button1_Click(object sender, RoutedEventArgs e)
+        {
+            var fbDialog = new FacebookDialog();
+            fbDialog.ShowDialog();
+
+            if (fbDialog.Result != null)
+            {
+                if (fbDialog.Result.IsSuccess)
+                {
+                    var fb = new FacebookClient(fbDialog.Result.AccessToken);
+
+                    dynamic result = fb.Get("/me");
+                    string name = result.name;
+
+                    Settings.Default.FacebookUsersSettings.Add(new Models.FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, Name = name });
+                    Settings.Default.Save();
+                }
+                else
+                {
+                    MessageBox.Show(fbDialog.Result.ErrorDescription);
+                }
+            }
         }
     }
 }
