@@ -1,0 +1,22 @@
+syntax: glob
+
+*.suo
+*.vsmdi
+*.cache
+*.orig
+*.user
+TestResults
+bin
+obj
+Bin
+glob:.svn
+glob:*.db
+glob:TestResult.xml
+glob:*.VisualState.xml
+glob:TestResult.html
+glob:hg-checkexec*
+glob:*.tmp
+glob:*_ReSharper*
+glob:*_BACKUP*
+glob:*.Deploy
+glob:*.vshost.exe
