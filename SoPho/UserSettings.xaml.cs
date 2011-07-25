@@ -10,6 +10,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Facebook;
+using SoPho.Models;
 
 namespace SoPho
 {
@@ -18,14 +20,15 @@ namespace SoPho
     /// </summary>
     public partial class UserSettings : Window
     {
-        public UserSettings(string accessToken)
+        public UserSettings(FacebookUserSetting setting)
         {
             //get user
-        }
-
-        public UserSettings()
-        {
             InitializeComponent();
+
+            var fb = new FacebookClient(setting.AccessToken);
+
+            dynamic result = fb.Get("/me/friends");
+            result.ToString();
         }
     }
 }

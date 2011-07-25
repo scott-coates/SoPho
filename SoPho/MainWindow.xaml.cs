@@ -48,7 +48,7 @@ namespace SoPho
                     string name = result.name;
                     string id = result.id;
 
-                    Settings.Default.FacebookUsersSettings.Add(new Models.FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, Name = name, UserId = id });
+                    Settings.Default.FacebookUsersSettings.Add(new FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, Name = name, UserId = id });
                     Settings.Default.Save();
                 }
                 else
@@ -60,8 +60,9 @@ namespace SoPho
 
         private void ShowUserSetingsExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            MessageBox.Show("Hey, I'm some help.");
+            var setting = e.Parameter as FacebookUserSetting;
             e.Handled = true;
+            var userSettingDialog = new UserSettings(setting);
         }
     }
 }

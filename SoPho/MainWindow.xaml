@@ -11,19 +11,15 @@
     </Window.CommandBindings>
 
     <Grid>
-        <ListBox Name="lsUsers" ItemsSource="{StaticResource users}" Margin="0,68,0,0">
+        <ListBox Name="lsUsers" ItemsSource="{Binding Source= {StaticResource users}}" Margin="0,68,0,0">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <Button Command="Open"  CommandParameter="{Binding}">
-                            
-                            <TextBlock>
-<TextBlock.Text>
-    <MultiBinding StringFormat="Edit {0}">
-        <Binding Path="Name"/>
-    </MultiBinding>
-</TextBlock.Text>
-                            </TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Edit "/>
+                                <TextBlock Text="{Binding Path=Name}"/>
+                            </StackPanel>
                         </Button>
                     </StackPanel>
                 </DataTemplate>

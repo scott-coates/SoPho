@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
-        Title="FacebookDialog" Height="300" Width="300">
+        Title="FacebookDialog" Height="345" Width="756">
     <StackPanel>
         <wfi:WindowsFormsHost>
-            <wf:WebBrowser Navigated="WebBrowser_Navigated" x:Name="fbLogin"/>
+            <wf:WebBrowser Navigated="WebBrowserNavigated" x:Name="fbLogin" />
         </wfi:WindowsFormsHost>
     </StackPanel>
 </Window>
