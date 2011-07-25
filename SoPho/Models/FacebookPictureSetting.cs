@@ -10,5 +10,15 @@ namespace SoPho.Models
     {
         public FacebookUser User { get; set; }
         public bool Selected { get; set; }
+
+        public FacebookPictureSetting()
+        {
+        }
+
+        public FacebookPictureSetting(FacebookUser user, bool selected)
+        {
+            User = user;
+            Selected = selected;
+        }
     }
 }

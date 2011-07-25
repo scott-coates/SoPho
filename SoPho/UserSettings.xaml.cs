@@ -27,11 +27,26 @@ namespace SoPho
 
             var fb = new FacebookClient(setting.AccessToken);
 
-            var pictureSettings = new List<FacebookPictureSetting>();
+            var picSettings = new List<FacebookPictureSetting>();
 
+            dynamic friends = fb.Get("/me/friends");
 
-            dynamic result = fb.Get("/me/friends");
-            result.ToString();
+            foreach (var friend in friends.data)
+            {
+                picSettings.Add(new FacebookPictureSetting(new FacebookUser(friend.name, friend.id), false));
+            }
+
+            picSettings.Sort((x, y) => string.Compare(x.User.Name, y.User.Name));
+            picSettings.Insert(0, new FacebookPictureSetting(new FacebookUser(setting.User.Name, setting.User.Id), false));
+
+            var selectedPics = picSettings.Where(x => setting.PictureSettings.Any(y => y.User.Id == x.User.Id));
+
+            foreach(var sp in selectedPics)
+            {
+                sp.Selected = true;
+            }
+
+            lsUsers.ItemsSource = picSettings;
         }
     }
 }

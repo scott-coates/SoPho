@@ -63,6 +63,7 @@ namespace SoPho
             var setting = e.Parameter as FacebookUserSetting;
             e.Handled = true;
             var userSettingDialog = new UserSettings(setting);
+            userSettingDialog.ShowDialog();
         }
     }
 }

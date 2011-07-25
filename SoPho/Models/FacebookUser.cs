@@ -6,7 +6,7 @@ namespace SoPho.Models
     public class FacebookUser
     {
         public string Name { get; set; }
-        public string UserId { get; set; }
+        public string Id { get; set; }
 
         public FacebookUser()
         {
@@ -16,7 +16,7 @@ namespace SoPho.Models
         public FacebookUser(string name, string id)
         {
             Name = name;
-            UserId = id;
+            Id = id;
         }
     }
 }
