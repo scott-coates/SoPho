@@ -3,28 +3,25 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:src="clr-namespace:SoPho.Models"
         Title="MainWindow" Height="350" Width="525">
-    <Window.Resources>
-        <src:FacebookUserSettingCollection x:Key="users"/>
-    </Window.Resources>
     <Window.CommandBindings>
         <CommandBinding Command="Open" Executed="ShowUserSetingsExecuted" />
     </Window.CommandBindings>
 
     <Grid>
-        <ListBox Name="lsUsers" ItemsSource="{Binding Source= {StaticResource users}}" Margin="0,68,0,0">
+        <ListBox Name="lsUsers" Margin="0,68,0,0">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <Button Command="Open"  CommandParameter="{Binding}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Edit "/>
-                                <TextBlock Text="{Binding Path=Name}"/>
+                                <TextBlock Text="{Binding Path=User.Name}"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-        <Button Content="Add User" Height="23" HorizontalAlignment="Left" Margin="390,31,0,0" Name="button1" VerticalAlignment="Top" Width="101" Click="button1_Click" />
+        <Button Content="Add User" Height="23" HorizontalAlignment="Left" Margin="390,31,0,0" Name="button1" VerticalAlignment="Top" Width="101" Click="Button1Click" />
     </Grid>
 </Window>

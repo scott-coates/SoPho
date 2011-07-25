@@ -27,6 +27,9 @@ namespace SoPho
 
             var fb = new FacebookClient(setting.AccessToken);
 
+            var pictureSettings = new List<FacebookPictureSetting>();
+
+
             dynamic result = fb.Get("/me/friends");
             result.ToString();
         }

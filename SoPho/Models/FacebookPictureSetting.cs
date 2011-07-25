@@ -8,7 +8,7 @@ namespace SoPho.Models
     [Serializable]
     public class FacebookPictureSetting
     {
-        public string UserId { get; set; }
+        public FacebookUser User { get; set; }
         public bool Selected { get; set; }
     }
 }

@@ -10,8 +10,7 @@ namespace SoPho.Models
     public class FacebookUserSetting
     {
         public string AccessToken { get; set; }
-        public string Name { get; set; }
-        public string UserId{ get; set; }
+        public FacebookUser User { get; set; }
         public ObservableCollection<FacebookPictureSetting> PictureSettings { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿<Window x:Class="SoPho.UserSettings"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:user="clr-namespace:SoPho.Models"
         Title="UserSettings" Height="442" Width="411">
     <Grid>
         <ListBox Name="lsUsers"  Margin="0,68,0,0">

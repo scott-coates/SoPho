@@ -27,13 +27,13 @@ namespace SoPho
             InitializeComponent();
             if (Settings.Default.FacebookUsersSettings == null)
             {
-                Settings.Default.FacebookUsersSettings = new Models.FacebookUserSettingCollection();
+                Settings.Default.FacebookUsersSettings = new FacebookUserSettingCollection();
             }
 
             lsUsers.ItemsSource = Settings.Default.FacebookUsersSettings;
         }
 
-        private void button1_Click(object sender, RoutedEventArgs e)
+        private void Button1Click(object sender, RoutedEventArgs e)
         {
             var fbDialog = new FacebookDialog();
             fbDialog.ShowDialog();
@@ -48,7 +48,7 @@ namespace SoPho
                     string name = result.name;
                     string id = result.id;
 
-                    Settings.Default.FacebookUsersSettings.Add(new FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, Name = name, UserId = id });
+                    Settings.Default.FacebookUsersSettings.Add(new FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken,User = new FacebookUser(name, id) });
                     Settings.Default.Save();
                 }
                 else
