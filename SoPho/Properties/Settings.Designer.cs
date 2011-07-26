@@ -25,9 +25,9 @@ namespace SoPho.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        public global::SoPho.Models.FacebookUserSettingCollection FacebookUsersSettings {
+        public global::SoPho.Models.FacebookSettings FacebookUsersSettings {
             get {
-                return ((global::SoPho.Models.FacebookUserSettingCollection)(this["FacebookUsersSettings"]));
+                return ((global::SoPho.Models.FacebookSettings)(this["FacebookUsersSettings"]));
             }
             set {
                 this["FacebookUsersSettings"] = value;

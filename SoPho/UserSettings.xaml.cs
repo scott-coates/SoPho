@@ -20,8 +20,11 @@ namespace SoPho
     /// </summary>
     public partial class UserSettings : Window
     {
+        private readonly FacebookUserSetting _setting;
+
         public UserSettings(FacebookUserSetting setting)
         {
+            _setting = setting;
             //get user
             InitializeComponent();
 
@@ -41,12 +44,28 @@ namespace SoPho
 
             var selectedPics = picSettings.Where(x => setting.PictureSettings.Any(y => y.User.Id == x.User.Id));
 
-            foreach(var sp in selectedPics)
+            foreach (var sp in selectedPics)
             {
                 sp.Selected = true;
             }
 
             lsUsers.ItemsSource = picSettings;
+        }
+
+        private void Button1Click(object sender, RoutedEventArgs e)
+        {
+            _setting.PictureSettings.Clear();
+
+            var items = (List<FacebookPictureSetting>)lsUsers.ItemsSource;
+
+            foreach (var item in items.Where(x=>x.Selected))
+            {
+                _setting.PictureSettings.Add(item);
+            }
+
+            Properties.Settings.Default.Save();
+
+            DialogResult = true;
         }
     }
 }

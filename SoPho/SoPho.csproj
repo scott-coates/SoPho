@@ -90,7 +90,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\FacebookUserSettingCollection.cs" />
+    <Compile Include="Models\FacebookSettings.cs" />
     <Compile Include="Models\FacebookUserSetting.cs" />
     <Compile Include="Models\SoPhoConstants.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

@@ -27,10 +27,12 @@ namespace SoPho
             InitializeComponent();
             if (Settings.Default.FacebookUsersSettings == null)
             {
-                Settings.Default.FacebookUsersSettings = new FacebookUserSettingCollection();
+                Settings.Default.FacebookUsersSettings = new FacebookSettings();
             }
 
-            lsUsers.ItemsSource = Settings.Default.FacebookUsersSettings;
+            lsUsers.ItemsSource = Settings.Default.FacebookUsersSettings.UserSettings;
+            txtDir.Text = Settings.Default.FacebookUsersSettings.PhotoDirectory;
+            txtDays.Text = Settings.Default.FacebookUsersSettings.DaysBack.ToString();
         }
 
         private void Button1Click(object sender, RoutedEventArgs e)
@@ -48,7 +50,7 @@ namespace SoPho
                     string name = result.name;
                     string id = result.id;
 
-                    Settings.Default.FacebookUsersSettings.Add(new FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken,User = new FacebookUser(name, id) });
+                    Settings.Default.FacebookUsersSettings.UserSettings.Add(new FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, User = new FacebookUser(name, id) });
                     Settings.Default.Save();
                 }
                 else
@@ -64,6 +66,13 @@ namespace SoPho
             e.Handled = true;
             var userSettingDialog = new UserSettings(setting);
             userSettingDialog.ShowDialog();
+        }
+
+        private void Button2Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Default.FacebookUsersSettings.PhotoDirectory = txtDir.Text;
+            Settings.Default.FacebookUsersSettings.DaysBack = int.Parse(txtDays.Text);
+            Settings.Default.Save();
         }
     }
 }
