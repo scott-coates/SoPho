@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -78,7 +80,7 @@ namespace SoPho
 
         private void Button3Click(object sender, RoutedEventArgs e)
         {
-            status.Content = "running...";
+            status.Content = "Querying photos...";
 
             const string queryFormat =
                 "SELECT src_big FROM photo WHERE pid IN (SELECT pid FROM photo_tag WHERE subject IN ({0})) AND created >= {1}";
@@ -88,49 +90,89 @@ namespace SoPho
             string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
 
-            var picsToGet = new ConcurrentBag<string>();
+            var picsToGet = new ConcurrentBag<Uri>();
 
             //foreach user, build query
 
             var uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
-            Task t = Task.Factory.StartNew(() =>
-                                               {
-                                                   Parallel.ForEach(Settings.Default.FacebookUsersSettings.UserSettings,
-                                                                    (userSetting =>
-                                                                         {
-                                                                             string[] ids =
-                                                                                 userSetting.PictureSettings.Select(
-                                                                                     x => x.User.Id).ToArray();
-                                                                             string query =
-                                                                                 string.Format(
-                                                                                     queryFormat,
-                                                                                     string.Join(",", ids),
-                                                                                     seconds);
-                                                                             queries.Add(query);
-                                                                             var fb =
-                                                                                 new FacebookClient(
-                                                                                     userSetting.
-                                                                                         AccessToken);
-                                                                             dynamic result =
-                                                                                 fb.Query(query);
+            Task.Factory.StartNew(() =>
+                                  GetPicUrls(queries, picsToGet, seconds, queryFormat))
+                .ContinueWith(UpdateStatusAfterQueryingPhotos, uiTaskScheduler)
+                .ContinueWith(y => ProcessPics(picsToGet), TaskContinuationOptions.OnlyOnRanToCompletion)
+                .ContinueWith(UpdateStatusAfterProcessingPics, uiTaskScheduler);
+        }
 
-                                                                             foreach (var pic in result)
-                                                                             {
-                                                                                 picsToGet.Add(pic.src_big);
-                                                                             }
-                                                                         }));
-                                               }).ContinueWith(t2 =>
-                                                                   {
-                                                                       if (t2.Exception != null)
-                                                                       {
-                                                                           status.Content = t2.Exception.Message;
-                                                                       }
-                                                                       else
-                                                                       {
-                                                                           status.Content = "Done downloading";
-                                                                       }
-                                                                   }, uiTaskScheduler);
+        private void UpdateStatusAfterProcessingPics(Task obj)
+        {
+            if (obj.Exception != null)
+            {
+                status.Content = obj.Exception.Flatten().Message;
+            }
+            else
+            {
+                status.Content = "Done!";
+            }
+        }
+
+        private static void ProcessPics(ConcurrentBag<Uri> picsToGet)
+        {
+            var existingFiles = Directory.GetFiles(Settings.Default.FacebookUsersSettings.PhotoDirectory);
+            var filesToDelete = existingFiles.Except(picsToGet.Select(x => Path.GetFileName(x.AbsoluteUri)));
+
+            try
+            {
+                foreach (var file in filesToDelete)
+                {
+                    File.Delete(file);
+                }
+            }
+            catch
+            {
+            }
+
+            //delete files not in list
+            Parallel.ForEach(picsToGet.Distinct(), x =>
+                                                       {
+                                                           var client = new WebClient();
+                                                           client.DownloadFile(x,
+                                                                               Path.Combine(
+                                                                                   Settings.Default.
+                                                                                       FacebookUsersSettings.
+                                                                                       PhotoDirectory,
+                                                                                   Path.GetFileName(x.AbsoluteUri)));
+                                                       });
+        }
+
+        private void UpdateStatusAfterQueryingPhotos(Task task)
+        {
+            if (task.Exception != null)
+            {
+                status.Content = task.Exception.Flatten().Message;
+            }
+            else
+            {
+                status.Content = "Downloading photos...";
+            }
+        }
+
+        private static void GetPicUrls(List<string> queries, ConcurrentBag<Uri> picsToGet, string seconds,
+                                       string queryFormat)
+        {
+            Parallel.ForEach(Settings.Default.FacebookUsersSettings.UserSettings,
+                             (userSetting =>
+                                  {
+                                      string[] ids = userSetting.PictureSettings.Select(x => x.User.Id).ToArray();
+                                      string query = string.Format(queryFormat, string.Join(",", ids), seconds);
+                                      queries.Add(query);
+                                      var fb = new FacebookClient(userSetting.AccessToken);
+                                      dynamic result = fb.Query(query);
+
+                                      foreach (var pic in result)
+                                      {
+                                          picsToGet.Add(new Uri(pic.src_big));
+                                      }
+                                  }));
         }
     }
 }
