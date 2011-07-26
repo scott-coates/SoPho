@@ -79,7 +79,13 @@ namespace SoPho
 
         private void Button3Click(object sender, RoutedEventArgs e)
         {
+            DownloadPhotos();
+        }
+
+        public Task DownloadPhotos()
+        {
             status.Content = "Querying photos...";
+            Console.WriteLine(status.Content);
 
             const string queryFormat =
                 "SELECT src_big FROM photo WHERE pid IN (SELECT pid FROM photo_tag WHERE subject IN ({0})) AND created >= {1}";
@@ -94,11 +100,13 @@ namespace SoPho
             //foreach user, build query
 
             TaskScheduler uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            Task.Factory.StartNew(() =>
+            var task = Task.Factory.StartNew(() =>
                                   GetPicUrls(queries, picsToGet, seconds, queryFormat))
                 .ContinueWith(UpdateStatusAfterQueryingPhotos, uiTaskScheduler)
                 .ContinueWith(y => ProcessPics(y, picsToGet))
                 .ContinueWith(UpdateStatusAfterProcessingPics, uiTaskScheduler);
+            
+            return task;
         }
 
         private void UpdateStatusAfterProcessingPics(Task obj)
@@ -111,6 +119,8 @@ namespace SoPho
             {
                 status.Content = "Done!";
             }
+
+            Console.WriteLine(status.Content);
         }
 
         private static void ProcessPics(Task t, ConcurrentBag<Uri> picsToGet)
@@ -170,6 +180,8 @@ namespace SoPho
             {
                 status.Content = "Downloading photos...";
             }
+
+            Console.WriteLine(status.Content);
         }
 
         private static void GetPicUrls(List<string> queries, ConcurrentBag<Uri> picsToGet, string seconds,
