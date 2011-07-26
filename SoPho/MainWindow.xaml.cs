@@ -4,14 +4,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Facebook;
 using SoPho.Models;
 using SoPho.Properties;
-using System.Diagnostics;
-using System.Threading;
 
 namespace SoPho
 {
@@ -94,12 +93,11 @@ namespace SoPho
 
             //foreach user, build query
 
-            var uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
-
+            TaskScheduler uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
             Task.Factory.StartNew(() =>
                                   GetPicUrls(queries, picsToGet, seconds, queryFormat))
                 .ContinueWith(UpdateStatusAfterQueryingPhotos, uiTaskScheduler)
-                .ContinueWith(y => ProcessPics(picsToGet), TaskContinuationOptions.OnlyOnRanToCompletion)
+                .ContinueWith(y => ProcessPics(y, picsToGet))
                 .ContinueWith(UpdateStatusAfterProcessingPics, uiTaskScheduler);
         }
 
@@ -115,14 +113,19 @@ namespace SoPho
             }
         }
 
-        private static void ProcessPics(ConcurrentBag<Uri> picsToGet)
+        private static void ProcessPics(Task t, ConcurrentBag<Uri> picsToGet)
         {
-            var existingFiles = Directory.GetFiles(Settings.Default.FacebookUsersSettings.PhotoDirectory);
-            var filesToDelete = existingFiles.Except(picsToGet.Select(x => Path.GetFileName(x.AbsoluteUri)));
+            if (t.Exception != null)
+            {
+                throw t.Exception.Flatten();
+            }
+            string[] existingFiles = Directory.GetFiles(Settings.Default.FacebookUsersSettings.PhotoDirectory);
+            IEnumerable<string> filesToDelete =
+                existingFiles.Except(picsToGet.Select(x => Path.GetFileName(x.AbsoluteUri)));
 
             try
             {
-                foreach (var file in filesToDelete)
+                foreach (string file in filesToDelete)
                 {
                     File.Delete(file);
                 }
@@ -132,16 +135,18 @@ namespace SoPho
             }
 
             //delete files not in list
-            Parallel.ForEach(picsToGet.Distinct(), x =>
-                                                       {
-                                                           var client = new WebClient();
-                                                           client.DownloadFile(x,
-                                                                               Path.Combine(
-                                                                                   Settings.Default.
-                                                                                       FacebookUsersSettings.
-                                                                                       PhotoDirectory,
-                                                                                   Path.GetFileName(x.AbsoluteUri)));
-                                                       });
+            Parallel.ForEach(picsToGet.Distinct(), DownloadFiles);
+        }
+
+        private static void DownloadFiles(Uri x)
+        {
+            var client = new WebClient();
+            client.DownloadFile(x,
+                                Path.Combine(
+                                    Settings.Default.
+                                        FacebookUsersSettings.
+                                        PhotoDirectory,
+                                    Path.GetFileName(x.AbsoluteUri)));
         }
 
         private void UpdateStatusAfterQueryingPhotos(Task task)
@@ -149,6 +154,7 @@ namespace SoPho
             if (task.Exception != null)
             {
                 status.Content = task.Exception.Flatten().Message;
+                throw task.Exception.Flatten();
             }
             else
             {
@@ -168,7 +174,7 @@ namespace SoPho
                                       var fb = new FacebookClient(userSetting.AccessToken);
                                       dynamic result = fb.Query(query);
 
-                                      foreach (var pic in result)
+                                      foreach (dynamic pic in result)
                                       {
                                           picsToGet.Add(new Uri(pic.src_big));
                                       }
