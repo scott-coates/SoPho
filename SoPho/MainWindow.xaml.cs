@@ -121,7 +121,11 @@ namespace SoPho
             }
             string[] existingFiles = Directory.GetFiles(Settings.Default.FacebookUsersSettings.PhotoDirectory);
             IEnumerable<string> filesToDelete =
-                existingFiles.Except(picsToGet.Select(x => Path.GetFileName(x.AbsoluteUri)));
+                existingFiles.Except(
+                    picsToGet.Distinct().Select(
+                        x =>
+                        Path.Combine(Settings.Default.FacebookUsersSettings.PhotoDirectory,
+                                     Path.GetFileName(x.AbsoluteUri))));
 
             try
             {
@@ -135,7 +139,13 @@ namespace SoPho
             }
 
             //delete files not in list
-            Parallel.ForEach(picsToGet.Distinct(), DownloadFiles);
+            IEnumerable<Uri> filesToDownload =
+                picsToGet.Distinct().Where(
+                    x =>
+                    !existingFiles.Contains(Path.Combine(Settings.Default.FacebookUsersSettings.PhotoDirectory,
+                                                         Path.GetFileName(x.AbsoluteUri))));
+
+            Parallel.ForEach(filesToDownload, DownloadFiles);
         }
 
         private static void DownloadFiles(Uri x)
