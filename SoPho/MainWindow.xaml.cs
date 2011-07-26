@@ -1,19 +1,15 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SoPho.Properties;
 using Facebook;
 using SoPho.Models;
+using SoPho.Properties;
+using System.Diagnostics;
+using System.Threading;
 
 namespace SoPho
 {
@@ -50,7 +46,12 @@ namespace SoPho
                     string name = result.name;
                     string id = result.id;
 
-                    Settings.Default.FacebookUsersSettings.UserSettings.Add(new FacebookUserSetting { AccessToken = fbDialog.Result.AccessToken, User = new FacebookUser(name, id) });
+                    Settings.Default.FacebookUsersSettings.UserSettings.Add(new FacebookUserSetting
+                                                                                {
+                                                                                    AccessToken =
+                                                                                        fbDialog.Result.AccessToken,
+                                                                                    User = new FacebookUser(name, id)
+                                                                                });
                     Settings.Default.Save();
                 }
                 else
@@ -77,24 +78,59 @@ namespace SoPho
 
         private void Button3Click(object sender, RoutedEventArgs e)
         {
-            //https://api.facebook.com/method/fql.query?format=json&query=SELECT src_big FROM photo WHERE pid IN (SELECT pid FROM photo_tag WHERE subject IN (1310574449,208201781)) AND created >= 1309057174&access_token=166125390126089|ec9ddc6bd6d9ce9eb2f7f32d.1-208201781|cf39JVOoAiPv7-rEKg86rK0ph7k
-            const string queryFormat = "SELECT src_big FROM photo WHERE pid IN (SELECT pid FROM photo_tag WHERE subject IN ({0})) AND created >= {1}";
+            status.Content = "running...";
 
-            TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) - new DateTime(1970, 1, 1));
-            var seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
+            const string queryFormat =
+                "SELECT src_big FROM photo WHERE pid IN (SELECT pid FROM photo_tag WHERE subject IN ({0})) AND created >= {1}";
+
+            TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) -
+                                new DateTime(1970, 1, 1));
+            string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
+
+            var picsToGet = new ConcurrentBag<string>();
 
             //foreach user, build query
 
-            foreach(var userSetting in Settings.Default.FacebookUsersSettings.UserSettings)
-            {
-                string[] ids = userSetting.PictureSettings.Select(x=>x.User.Id).ToArray();
-                string query = string.Format(queryFormat, string.Join(",", ids), seconds);
-                queries.Add(query);
-                var fb = new FacebookClient(userSetting.AccessToken);
-                dynamic result = fb.Query(query);
+            var uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
-            }
+            Task t = Task.Factory.StartNew(() =>
+                                               {
+                                                   Parallel.ForEach(Settings.Default.FacebookUsersSettings.UserSettings,
+                                                                    (userSetting =>
+                                                                         {
+                                                                             string[] ids =
+                                                                                 userSetting.PictureSettings.Select(
+                                                                                     x => x.User.Id).ToArray();
+                                                                             string query =
+                                                                                 string.Format(
+                                                                                     queryFormat,
+                                                                                     string.Join(",", ids),
+                                                                                     seconds);
+                                                                             queries.Add(query);
+                                                                             var fb =
+                                                                                 new FacebookClient(
+                                                                                     userSetting.
+                                                                                         AccessToken);
+                                                                             dynamic result =
+                                                                                 fb.Query(query);
+
+                                                                             foreach (var pic in result)
+                                                                             {
+                                                                                 picsToGet.Add(pic.src_big);
+                                                                             }
+                                                                         }));
+                                               }).ContinueWith(t2 =>
+                                                                   {
+                                                                       if (t2.Exception != null)
+                                                                       {
+                                                                           status.Content = t2.Exception.Message;
+                                                                       }
+                                                                       else
+                                                                       {
+                                                                           status.Content = "Done downloading";
+                                                                       }
+                                                                   }, uiTaskScheduler);
         }
     }
 }

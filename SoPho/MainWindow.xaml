@@ -2,13 +2,13 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:src="clr-namespace:SoPho.Models"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="480" Width="518">
     <Window.CommandBindings>
         <CommandBinding Command="Open" Executed="ShowUserSetingsExecuted" />
     </Window.CommandBindings>
 
     <Grid>
-        <ListBox Name="lsUsers" Margin="0,68,0,0">
+        <ListBox Name="lsUsers" Margin="0,68,0,21">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -28,5 +28,8 @@
         <TextBox Height="21" HorizontalAlignment="Left" Margin="12,12,0,0" Name="txtDir" VerticalAlignment="Top" Width="363" ToolTip="Photo Directory" />
         <TextBox Height="21" HorizontalAlignment="Left" Margin="12,33,0,0" Name="txtDays" VerticalAlignment="Top" Width="72" ToolTip="How far back should pics be downloaded?" />
         <Button Content="Get Photos!" Height="23" HorizontalAlignment="Left" Margin="390,39,0,0" Name="button3" VerticalAlignment="Top" Width="101" Click="Button3Click" />
+        <StatusBar Name="statusBar1" Margin="0,409,0,0">
+            <StatusBarItem Name="status" />
+        </StatusBar>
     </Grid>
 </Window>
