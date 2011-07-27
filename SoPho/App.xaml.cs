@@ -35,7 +35,7 @@ namespace SoPho
             if (task == null) throw new ArgumentNullException("task");
             var nestedFrame = new DispatcherFrame();
             task.ContinueWith(_ => nestedFrame.Continue = false);
-            Dispatcher.PushFrame(nestedFrame); //queue up one more task - it won't run until all other tasks are done. it won't block the ui thread
+            Dispatcher.PushFrame(nestedFrame); //execute this loop until all other tasks are done. it won't block the ui thread
             task.Wait();
         }
     }
