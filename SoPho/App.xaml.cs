@@ -57,6 +57,7 @@ namespace SoPho
                     if (process.ProcessName == "cmd") //Is the uppermost window a cmd process?
                     {
                         AttachConsole(process.Id);
+                        Console.WriteLine();//empty puts new line and looks better
                     }
                     else
                     {
@@ -66,7 +67,6 @@ namespace SoPho
                     }
                     var task = new MainWindow().DownloadPhotos();
                     WaitWithPumping(task);
-                    Console.Read();
                 }
                 finally
                 {
