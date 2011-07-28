@@ -162,6 +162,7 @@ namespace SoPho
                 }
             }
             status.Content = "Done!";
+            Console.WriteLine(status.Content);
         }
 
         public Task DownloadPhotos()
@@ -197,9 +198,6 @@ namespace SoPho
             {
                 status.Content = obj.Exception.Flatten().Message;
             }
-
-
-            Console.WriteLine(status.Content);
         }
 
         private static void ProcessPics(Task t, ConcurrentBag<Uri> picsToGet)
