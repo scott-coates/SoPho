@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Facebook;
 using SoPho.Models;
 using SoPho.Properties;
@@ -89,7 +90,10 @@ namespace SoPho
 
             if (Settings.Default.FacebookUsersSettings.RemoveMediaAfterDownload)
             {
-                status.Content = "Removing media";
+                //higher priority http://social.msdn.microsoft.com/forums/en-US/wpf/thread/6fce9b7b-4a13-4c8d-8c3e-562667851baa/
+                status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() =>
+                                                                               status.Content = "Removing media"
+                                                                        ));
                 Console.WriteLine(status.Content);
 
                 string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
@@ -140,14 +144,23 @@ namespace SoPho
                     //http://stackoverflow.com/questions/562350/requested-registry-access-is-not-allowed/562389#562389
                     //http://stackoverflow.com/questions/133379/elevating-process-privilege-programatically/133500#133500
                     //http://stackoverflow.com/questions/562350/requested-registry-access-is-not-allowed/562389#562389
-                    var process =
-                        new ProcessStartInfo(Path.Combine(Environment.CurrentDirectory, "external\\devcon.exe"))
-                            {UseShellExecute = true, Verb = "runas", Arguments = "remove " + hardwareId};
-                    Process.Start(process);
+                    var processInfo =
+                        new ProcessStartInfo(Path.Combine(Environment.CurrentDirectory, "external\\devcon.exe")) { UseShellExecute = true, Verb = "runas", Arguments = "remove " + hardwareId };
+                    var process = Process.Start(processInfo);
 
-                    status.Content = "Cannot remove " + driveInfo.DriveType + " disks. The process is done.";
-                    Console.WriteLine(status.Content);
+                    if (!process.WaitForExit(10000))
+                    {
+                        status.Content = driverLetter + " failed to eject.";
+                        Console.WriteLine(status.Content);
+                    }
+                    else
+                    {
+                        status.Content = driverLetter + " has been ejected.";
+                        Console.WriteLine(status.Content);
+                    }
                 }
+
+                status.Content = "Done!";
             }
         }
 
@@ -161,7 +174,7 @@ namespace SoPho
 
             TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) -
                                 new DateTime(1970, 1, 1));
-            string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
+            string seconds = ((int)Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
 
             var picsToGet = new ConcurrentBag<Uri>();
@@ -184,10 +197,7 @@ namespace SoPho
             {
                 status.Content = obj.Exception.Flatten().Message;
             }
-            else
-            {
-                status.Content = "Done!";
-            }
+
 
             Console.WriteLine(status.Content);
         }
