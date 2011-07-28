@@ -38,6 +38,7 @@ namespace SoPho
         {
             base.OnStartup(e);
 
+            var mainWindow = new MainWindow();
             if (e.Args.Contains("auto"))
             {
                 try
@@ -65,8 +66,9 @@ namespace SoPho
 
                         AllocConsole();
                     }
-                    var task = new MainWindow().DownloadPhotos();
+                    var task = mainWindow.DownloadPhotos();
                     WaitWithPumping(task);
+                    mainWindow.RemoveDrive();
                 }
                 finally
                 {
@@ -75,7 +77,7 @@ namespace SoPho
             }
             else
             {
-                new MainWindow().ShowDialog();
+                mainWindow.ShowDialog();
             }
             Shutdown();
         }

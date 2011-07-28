@@ -88,6 +88,11 @@ namespace SoPho
             Task t = DownloadPhotos();
             App.WaitWithPumping(t);
 
+            RemoveDrive();
+        }
+
+        public void RemoveDrive()
+        {
             if (Settings.Default.FacebookUsersSettings.RemoveMediaAfterDownload)
             {
                 //higher priority http://social.msdn.microsoft.com/forums/en-US/wpf/thread/6fce9b7b-4a13-4c8d-8c3e-562667851baa/
