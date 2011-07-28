@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -104,29 +105,48 @@ namespace SoPho
                 var driveInfo = DriveInfo.GetDrives().First(x => x.Name == driverLetter);
                 if (driveInfo.DriveType != DriveType.Removable)
                 {
-                    status.Content = "Cannot remove " + driveInfo.DriveType + " disks";
+                    status.Content = "Cannot remove " + driveInfo.DriveType + " disks. The process is done.";
                     Console.WriteLine(status.Content);
                 }
                 else
                 {
-                    var searcher = new ManagementObjectSearcher("ASSOCIATORS OF {Win32_LogicalDisk.DeviceID='" + driveInfo.Name.TrimEnd('\\') + "'} WHERE AssocClass = Win32_LogicalDiskToPartition");
-                    string logicalDiskPartitionDeviceId = searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString();
+                    var searcher =
+                        new ManagementObjectSearcher("ASSOCIATORS OF {Win32_LogicalDisk.DeviceID='" +
+                                                     driveInfo.Name.TrimEnd('\\') +
+                                                     "'} WHERE AssocClass = Win32_LogicalDiskToPartition");
+                    string logicalDiskPartitionDeviceId =
+                        searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString();
 
                     searcher.Query =
                         new ObjectQuery("ASSOCIATORS OF {Win32_DiskPartition.DeviceID='" + logicalDiskPartitionDeviceId +
                                         "'} WHERE AssocClass = Win32_DiskDriveToDiskPartition");
 
-                    string diskDriveDeviceId = searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString().Replace("\\","\\\\");
+                    string diskDriveDeviceId =
+                        searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString().Replace("\\", "\\\\");
 
                     searcher.Query =
-                        new ObjectQuery("SELECT PNPDeviceID FROM Win32_DiskDrive WHERE DeviceID='" + diskDriveDeviceId + "'");
+                        new ObjectQuery("SELECT PNPDeviceID FROM Win32_DiskDrive WHERE DeviceID='" + diskDriveDeviceId +
+                                        "'");
 
-                    string pnpDeviceId = searcher.Get().OfType<ManagementObject>().First()["PNPDeviceID"].ToString().Replace("\\", "\\\\");
+                    string pnpDeviceId =
+                        searcher.Get().OfType<ManagementObject>().First()["PNPDeviceID"].ToString().Replace("\\", "\\\\");
 
                     searcher.Query =
-                        new ObjectQuery("SELECT HardWareID FROM Win32_PnPSignedDriver WHERE DeviceID='" + pnpDeviceId + "'");
+                        new ObjectQuery("SELECT HardWareID FROM Win32_PnPSignedDriver WHERE DeviceID='" + pnpDeviceId +
+                                        "'");
 
                     string hardwareId = searcher.Get().OfType<ManagementObject>().First()["HardWareID"].ToString();
+
+                    //http://stackoverflow.com/questions/562350/requested-registry-access-is-not-allowed/562389#562389
+                    //http://stackoverflow.com/questions/133379/elevating-process-privilege-programatically/133500#133500
+                    //http://stackoverflow.com/questions/562350/requested-registry-access-is-not-allowed/562389#562389
+                    var process =
+                        new ProcessStartInfo(Path.Combine(Environment.CurrentDirectory, "external\\devcon.exe"))
+                            {UseShellExecute = true, Verb = "runas", Arguments = "remove " + hardwareId};
+                    Process.Start(process);
+
+                    status.Content = "Cannot remove " + driveInfo.DriveType + " disks. The process is done.";
+                    Console.WriteLine(status.Content);
                 }
             }
         }
@@ -141,7 +161,7 @@ namespace SoPho
 
             TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) -
                                 new DateTime(1970, 1, 1));
-            string seconds = ((int)Math.Round(daysAgo.TotalSeconds)).ToString();
+            string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
 
             var picsToGet = new ConcurrentBag<Uri>();
@@ -150,7 +170,7 @@ namespace SoPho
 
             TaskScheduler uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
             var task = Task.Factory.StartNew(() =>
-                                  GetPicUrls(queries, picsToGet, seconds, queryFormat))
+                                             GetPicUrls(queries, picsToGet, seconds, queryFormat))
                 .ContinueWith(UpdateStatusAfterQueryingPhotos, uiTaskScheduler)
                 .ContinueWith(y => ProcessPics(y, picsToGet))
                 .ContinueWith(UpdateStatusAfterProcessingPics, uiTaskScheduler);
