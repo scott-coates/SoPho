@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -108,7 +109,12 @@ namespace SoPho
                 }
                 else
                 {
-                    
+                    var searcher = new ManagementObjectSearcher("ASSOCIATORS OF {Win32_LogicalDisk.DeviceID='" + driveInfo.Name.TrimEnd('\\') + "'} WHERE AssocClass = Win32_LogicalDiskToPartition");
+                    foreach (ManagementObject share in searcher.Get())
+                    {
+                        // Some Codes ...
+                        share.ToString();
+                    }
                 }
             }
         }
