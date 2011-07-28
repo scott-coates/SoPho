@@ -110,11 +110,23 @@ namespace SoPho
                 else
                 {
                     var searcher = new ManagementObjectSearcher("ASSOCIATORS OF {Win32_LogicalDisk.DeviceID='" + driveInfo.Name.TrimEnd('\\') + "'} WHERE AssocClass = Win32_LogicalDiskToPartition");
-                    foreach (ManagementObject share in searcher.Get())
-                    {
-                        // Some Codes ...
-                        share.ToString();
-                    }
+                    string logicalDiskPartitionDeviceId = searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString();
+
+                    searcher.Query =
+                        new ObjectQuery("ASSOCIATORS OF {Win32_DiskPartition.DeviceID='" + logicalDiskPartitionDeviceId +
+                                        "'} WHERE AssocClass = Win32_DiskDriveToDiskPartition");
+
+                    string diskDriveDeviceId = searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString().Replace("\\","\\\\");
+
+                    searcher.Query =
+                        new ObjectQuery("SELECT PNPDeviceID FROM Win32_DiskDrive WHERE DeviceID='" + diskDriveDeviceId + "'");
+
+                    string pnpDeviceId = searcher.Get().OfType<ManagementObject>().First()["PNPDeviceID"].ToString().Replace("\\", "\\\\");
+
+                    searcher.Query =
+                        new ObjectQuery("SELECT HardWareID FROM Win32_PnPSignedDriver WHERE DeviceID='" + pnpDeviceId + "'");
+
+                    string hardwareId = searcher.Get().OfType<ManagementObject>().First()["HardWareID"].ToString();
                 }
             }
         }
