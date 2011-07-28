@@ -31,5 +31,6 @@
         <StatusBar Name="statusBar1" Margin="0,409,0,0">
             <StatusBarItem Name="status" />
         </StatusBar>
+        <CheckBox Content="Remove Media After Getting Photos" Height="16" HorizontalAlignment="Left" Margin="90,36,0,0" Name="checkBox1" VerticalAlignment="Top" />
     </Grid>
 </Window>

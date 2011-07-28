@@ -19,5 +19,6 @@ namespace SoPho.Models
         public ObservableCollection<FacebookUserSetting> UserSettings { get; set; }
         public string PhotoDirectory { get; set; }
         public int DaysBack { get; set; }
+        public bool RemoveMediaAfterDownload { get; set; }
     }
 }

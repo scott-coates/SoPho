@@ -30,6 +30,7 @@ namespace SoPho
             lsUsers.ItemsSource = Settings.Default.FacebookUsersSettings.UserSettings;
             txtDir.Text = Settings.Default.FacebookUsersSettings.PhotoDirectory;
             txtDays.Text = Settings.Default.FacebookUsersSettings.DaysBack.ToString();
+            checkBox1.IsChecked = Settings.Default.FacebookUsersSettings.RemoveMediaAfterDownload;
         }
 
         private void Button1Click(object sender, RoutedEventArgs e)
@@ -74,12 +75,42 @@ namespace SoPho
         {
             Settings.Default.FacebookUsersSettings.PhotoDirectory = txtDir.Text;
             Settings.Default.FacebookUsersSettings.DaysBack = int.Parse(txtDays.Text);
+            Settings.Default.FacebookUsersSettings.RemoveMediaAfterDownload = checkBox1.IsChecked.GetValueOrDefault();
+
             Settings.Default.Save();
         }
 
         private void Button3Click(object sender, RoutedEventArgs e)
         {
-            DownloadPhotos();
+            Task t = DownloadPhotos();
+            App.WaitWithPumping(t);
+
+            if (Settings.Default.FacebookUsersSettings.RemoveMediaAfterDownload)
+            {
+                status.Content = "Removing media";
+                Console.WriteLine(status.Content);
+
+                string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
+                string driverLetter;
+                string tmpPath = path;
+
+                do
+                {
+                    driverLetter = tmpPath;
+                    tmpPath = Path.GetDirectoryName(tmpPath);
+                } while (string.IsNullOrWhiteSpace(tmpPath) == false);
+
+                var driveInfo = DriveInfo.GetDrives().First(x => x.Name == driverLetter);
+                if (driveInfo.DriveType != DriveType.Removable)
+                {
+                    status.Content = "Cannot remove " + driveInfo.DriveType + " disks";
+                    Console.WriteLine(status.Content);
+                }
+                else
+                {
+                    
+                }
+            }
         }
 
         public Task DownloadPhotos()
@@ -92,7 +123,7 @@ namespace SoPho
 
             TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) -
                                 new DateTime(1970, 1, 1));
-            string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
+            string seconds = ((int)Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
 
             var picsToGet = new ConcurrentBag<Uri>();
@@ -105,7 +136,7 @@ namespace SoPho
                 .ContinueWith(UpdateStatusAfterQueryingPhotos, uiTaskScheduler)
                 .ContinueWith(y => ProcessPics(y, picsToGet))
                 .ContinueWith(UpdateStatusAfterProcessingPics, uiTaskScheduler);
-            
+
             return task;
         }
 
