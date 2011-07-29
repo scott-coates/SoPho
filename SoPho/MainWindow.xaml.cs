@@ -86,10 +86,26 @@ namespace SoPho
 
         private void Button3Click(object sender, RoutedEventArgs e)
         {
-            Task t = DownloadPhotos();
-            App.WaitWithPumping(t);
+            string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
+            var driverLetter = GetDriveLetter(path);
 
-            RemoveDrive();
+            var driveInfo = DriveInfo.GetDrives().FirstOrDefault(x => x.Name == driverLetter);
+
+            //unfortunately we cannot force the usb device to turn back on http://stackoverflow.com/questions/138394/how-to-programatically-unplug-replug-an-arbitrary-usb-device/138682#138682
+            if(driveInfo == null)
+            {
+                status.Content = "Drive " + driverLetter + " doesn't exist.";
+                Console.WriteLine(status.Content);
+                
+            }
+            else
+            {
+                Task t = DownloadPhotos();
+                App.WaitWithPumping(t);
+
+                RemoveDrive();    
+            }
+            
         }
 
         public void RemoveDrive()
@@ -103,14 +119,7 @@ namespace SoPho
                 Console.WriteLine(status.Content);
 
                 string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
-                string driverLetter;
-                string tmpPath = path;
-
-                do
-                {
-                    driverLetter = tmpPath;
-                    tmpPath = Path.GetDirectoryName(tmpPath);
-                } while (string.IsNullOrWhiteSpace(tmpPath) == false);
+                var driverLetter = GetDriveLetter(path);
 
                 var driveInfo = DriveInfo.GetDrives().First(x => x.Name == driverLetter);
                 if (driveInfo.DriveType != DriveType.Removable)
@@ -141,6 +150,19 @@ namespace SoPho
             }
             status.Content = "Done!";
             Console.WriteLine(status.Content);
+        }
+
+        private static string GetDriveLetter(string path)
+        {
+            string driverLetter;
+            string tmpPath = path;
+
+            do
+            {
+                driverLetter = tmpPath;
+                tmpPath = Path.GetDirectoryName(tmpPath);
+            } while (string.IsNullOrWhiteSpace(tmpPath) == false);
+            return driverLetter;
         }
 
         public Task DownloadPhotos()
