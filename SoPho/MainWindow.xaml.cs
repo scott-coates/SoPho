@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -150,8 +151,7 @@ namespace SoPho
                     //http://stackoverflow.com/questions/133379/elevating-process-privilege-programatically/133500#133500
                     //http://stackoverflow.com/questions/562350/requested-registry-access-is-not-allowed/562389#562389
                     var processInfo =
-                        new ProcessStartInfo(Path.Combine(Environment.CurrentDirectory, "external\\devcon.exe"))
-                            {UseShellExecute = true, Verb = "runas", Arguments = "remove " + hardwareId};
+                        new ProcessStartInfo(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "external\\devcon.exe")) { UseShellExecute = true, Verb = "runas", Arguments = "remove " + hardwareId };
                     var process = Process.Start(processInfo);
 
                     if (!process.WaitForExit(10000))
@@ -180,7 +180,7 @@ namespace SoPho
 
             TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) -
                                 new DateTime(1970, 1, 1));
-            string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
+            string seconds = ((int)Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
 
             var picsToGet = new ConcurrentBag<Uri>();
