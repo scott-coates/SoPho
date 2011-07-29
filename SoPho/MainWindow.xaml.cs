@@ -120,38 +120,11 @@ namespace SoPho
                 }
                 else
                 {
-                    var searcher =
-                        new ManagementObjectSearcher("ASSOCIATORS OF {Win32_LogicalDisk.DeviceID='" +
-                                                     driveInfo.Name.TrimEnd('\\') +
-                                                     "'} WHERE AssocClass = Win32_LogicalDiskToPartition");
-                    string logicalDiskPartitionDeviceId =
-                        searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString();
-
-                    searcher.Query =
-                        new ObjectQuery("ASSOCIATORS OF {Win32_DiskPartition.DeviceID='" + logicalDiskPartitionDeviceId +
-                                        "'} WHERE AssocClass = Win32_DiskDriveToDiskPartition");
-
-                    string diskDriveDeviceId =
-                        searcher.Get().OfType<ManagementObject>().First()["DeviceID"].ToString().Replace("\\", "\\\\");
-
-                    searcher.Query =
-                        new ObjectQuery("SELECT PNPDeviceID FROM Win32_DiskDrive WHERE DeviceID='" + diskDriveDeviceId +
-                                        "'");
-
-                    string pnpDeviceId =
-                        searcher.Get().OfType<ManagementObject>().First()["PNPDeviceID"].ToString().Replace("\\", "\\\\");
-
-                    searcher.Query =
-                        new ObjectQuery("SELECT HardWareID FROM Win32_PnPSignedDriver WHERE DeviceID='" + pnpDeviceId +
-                                        "'");
-
-                    string hardwareId = searcher.Get().OfType<ManagementObject>().First()["HardWareID"].ToString();
-
-                    //http://stackoverflow.com/questions/562350/requested-registry-access-is-not-allowed/562389#562389
-                    //http://stackoverflow.com/questions/133379/elevating-process-privilege-programatically/133500#133500
-                    //http://stackoverflow.com/questions/562350/requested-registry-access-is-not-allowed/562389#562389
                     var processInfo =
-                        new ProcessStartInfo(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "external\\devcon.exe")) { UseShellExecute = true, Verb = "runas", Arguments = "remove " + hardwareId };
+                        new ProcessStartInfo(
+                            Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                                         "external\\sync.exe"))
+                            {UseShellExecute = false, Arguments = "-e " + driverLetter};
                     var process = Process.Start(processInfo);
 
                     if (!process.WaitForExit(10000))
@@ -180,7 +153,7 @@ namespace SoPho
 
             TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) -
                                 new DateTime(1970, 1, 1));
-            string seconds = ((int)Math.Round(daysAgo.TotalSeconds)).ToString();
+            string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
 
             var picsToGet = new ConcurrentBag<Uri>();
