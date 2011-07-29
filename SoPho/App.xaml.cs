@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using SoPho.Properties;
 
 namespace SoPho
 {
@@ -58,7 +60,7 @@ namespace SoPho
                     if (process.ProcessName == "cmd") //Is the uppermost window a cmd process?
                     {
                         AttachConsole(process.Id);
-                        Console.WriteLine();//empty puts new line and looks better
+                        Console.WriteLine(); //empty puts new line and looks better
                     }
                     else
                     {
@@ -66,9 +68,23 @@ namespace SoPho
 
                         AllocConsole();
                     }
-                    var task = mainWindow.DownloadPhotos();
-                    WaitWithPumping(task);
-                    mainWindow.RemoveDrive();
+
+                    string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
+                    var driverLetter = mainWindow.GetDriveLetter(path);
+
+                    var driveInfo = DriveInfo.GetDrives().FirstOrDefault(x => x.Name == driverLetter);
+
+                    //unfortunately we cannot force the usb device to turn back on http://stackoverflow.com/questions/138394/how-to-programatically-unplug-replug-an-arbitrary-usb-device/138682#138682
+                    if (driveInfo == null)
+                    {
+                        Console.WriteLine("Drive " + driverLetter + " doesn't exist.");
+                    }
+                    else
+                    {
+                        var task = mainWindow.DownloadPhotos();
+                        WaitWithPumping(task);
+                        mainWindow.RemoveDrive();
+                    }
                 }
                 finally
                 {
@@ -88,7 +104,7 @@ namespace SoPho
             var nestedFrame = new DispatcherFrame();
             task.ContinueWith(_ => nestedFrame.Continue = false);
             Dispatcher.PushFrame(nestedFrame);
-                //execute this loop until all other tasks are done. it won't block the ui thread
+            //execute this loop until all other tasks are done. it won't block the ui thread
             task.Wait();
         }
     }

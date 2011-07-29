@@ -152,7 +152,7 @@ namespace SoPho
             Console.WriteLine(status.Content);
         }
 
-        private static string GetDriveLetter(string path)
+        public string GetDriveLetter(string path)
         {
             string driverLetter;
             string tmpPath = path;
