@@ -23,6 +23,8 @@ namespace SoPho
     /// </summary>
     public partial class MainWindow : Window
     {
+        private ManagementEventWatcher _watcher = new ManagementEventWatcher();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -35,6 +37,25 @@ namespace SoPho
             txtDir.Text = Settings.Default.FacebookUsersSettings.PhotoDirectory;
             txtDays.Text = Settings.Default.FacebookUsersSettings.DaysBack.ToString();
             checkBox1.IsChecked = Settings.Default.FacebookUsersSettings.RemoveMediaAfterDownload;
+
+            var query = new WqlEventQuery("SELECT * FROM Win32_VolumeChangeEvent WHERE EventType = 2");
+            TaskScheduler ui = TaskScheduler.FromCurrentSynchronizationContext();
+
+            _watcher.EventArrived += (sender, args) =>
+            {
+                string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
+                var driverLetter = GetDriveLetter(path);
+
+                if (driverLetter.TrimEnd('\\') == args.NewEvent.GetPropertyValue("DriveName").ToString())
+                {
+                    Task t = DownloadPhotos(ui);
+                    t.Wait();
+                    RemoveDrive();
+                }
+            };
+
+            _watcher.Query = query;
+            _watcher.Start();
         }
 
         private void Button1Click(object sender, RoutedEventArgs e)
@@ -92,20 +113,20 @@ namespace SoPho
             var driveInfo = DriveInfo.GetDrives().FirstOrDefault(x => x.Name == driverLetter);
 
             //unfortunately we cannot force the usb device to turn back on http://stackoverflow.com/questions/138394/how-to-programatically-unplug-replug-an-arbitrary-usb-device/138682#138682
-            if(driveInfo == null)
+            if (driveInfo == null)
             {
                 status.Content = "Drive " + driverLetter + " doesn't exist.";
                 Console.WriteLine(status.Content);
-                
+
             }
             else
             {
                 Task t = DownloadPhotos();
                 App.WaitWithPumping(t);
 
-                RemoveDrive();    
+                RemoveDrive();
             }
-            
+
         }
 
         public void RemoveDrive()
@@ -116,7 +137,7 @@ namespace SoPho
                 status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() =>
                                                                                status.Content = "Removing media"
                                                                         ));
-                Console.WriteLine(status.Content);
+                Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
 
                 string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
                 var driverLetter = GetDriveLetter(path);
@@ -124,32 +145,31 @@ namespace SoPho
                 var driveInfo = DriveInfo.GetDrives().First(x => x.Name == driverLetter);
                 if (driveInfo.DriveType != DriveType.Removable)
                 {
-                    status.Content = "Cannot remove " + driveInfo.DriveType + " disks. The process is done.";
-                    Console.WriteLine(status.Content);
-                }
+                    status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = "Cannot remove " + driveInfo.DriveType + " disks. The process is done."));
+                    Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+                    }
                 else
                 {
                     var processInfo =
                         new ProcessStartInfo(
                             Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                                         "external\\sync.exe"))
-                            {UseShellExecute = false, Arguments = "-e " + driverLetter};
+                                         "external\\sync.exe")) { UseShellExecute = false, Arguments = "-e " + driverLetter };
                     var process = Process.Start(processInfo);
 
                     if (!process.WaitForExit(10000))
                     {
-                        status.Content = driverLetter + " failed to eject.";
-                        Console.WriteLine(status.Content);
-                    }
+                        status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = driverLetter + " failed to eject."));
+                        Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+                        }
                     else
                     {
-                        status.Content = driverLetter + " has been ejected.";
-                        Console.WriteLine(status.Content);
-                    }
+                        status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = driverLetter + " has been ejected."));
+                        Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+                        }
                 }
             }
-            status.Content = "Done!";
-            Console.WriteLine(status.Content);
+            status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = "Done!"));
+            Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
         }
 
         public string GetDriveLetter(string path)
@@ -165,24 +185,24 @@ namespace SoPho
             return driverLetter;
         }
 
-        public Task DownloadPhotos()
+        public Task DownloadPhotos(TaskScheduler uiTaskScheduler = null)
         {
-            status.Content = "Querying photos...";
-            Console.WriteLine(status.Content);
+            status.Dispatcher.Invoke(DispatcherPriority.Render,new Action<string>(x=>status.Content=x),"Querying photos...");
+            Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
 
             const string queryFormat =
                 "SELECT src_big FROM photo WHERE pid IN (SELECT pid FROM photo_tag WHERE subject IN ({0})) AND created >= {1}";
 
             TimeSpan daysAgo = (DateTime.UtcNow.AddDays(-Settings.Default.FacebookUsersSettings.DaysBack) -
                                 new DateTime(1970, 1, 1));
-            string seconds = ((int) Math.Round(daysAgo.TotalSeconds)).ToString();
+            string seconds = ((int)Math.Round(daysAgo.TotalSeconds)).ToString();
             var queries = new List<string>();
 
             var picsToGet = new ConcurrentBag<Uri>();
 
             //foreach user, build query
 
-            TaskScheduler uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            uiTaskScheduler = uiTaskScheduler ?? TaskScheduler.FromCurrentSynchronizationContext();
             var task = Task.Factory.StartNew(() =>
                                              GetPicUrls(queries, picsToGet, seconds, queryFormat))
                 .ContinueWith(UpdateStatusAfterQueryingPhotos, uiTaskScheduler)
