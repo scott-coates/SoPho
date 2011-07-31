@@ -81,6 +81,7 @@ namespace SoPho
                     }
                     else
                     {
+                        
                         var task = mainWindow.DownloadPhotos();
                         WaitWithPumping(task);
                         mainWindow.RemoveDrive();
@@ -89,13 +90,16 @@ namespace SoPho
                 finally
                 {
                     FreeConsole();
+                    Shutdown();
                 }
+            }
+            else if (e.Args.Contains("minimized"))
+            {
             }
             else
             {
                 mainWindow.ShowDialog();
             }
-            Shutdown();
         }
 
         public static void WaitWithPumping(Task task)

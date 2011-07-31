@@ -10,11 +10,14 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Facebook;
 using SoPho.Models;
 using SoPho.Properties;
+using Application = System.Windows.Application;
+using MessageBox = System.Windows.MessageBox;
 
 namespace SoPho
 {
@@ -24,10 +27,21 @@ namespace SoPho
     public partial class MainWindow : Window
     {
         private ManagementEventWatcher _watcher = new ManagementEventWatcher();
+        private NotifyIcon _ni;
 
         public MainWindow()
         {
             InitializeComponent();
+            _ni = new System.Windows.Forms.NotifyIcon { Icon = new System.Drawing.Icon("camera.ico"), Visible = true };
+            _ni.DoubleClick +=
+                delegate
+                {
+                    Show();
+                    WindowState = WindowState.Normal;
+                };
+
+            _ni.ContextMenu = new ContextMenu(new[] { new MenuItem("Exit", (obj, arg) =>Application.Current.Shutdown()) });
+
             if (Settings.Default.FacebookUsersSettings == null)
             {
                 Settings.Default.FacebookUsersSettings = new FacebookSettings();
@@ -42,21 +56,53 @@ namespace SoPho
             TaskScheduler ui = TaskScheduler.FromCurrentSynchronizationContext();
 
             _watcher.EventArrived += (sender, args) =>
-            {
-                string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
-                var driverLetter = GetDriveLetter(path);
+                                         {
+                                             string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
+                                             var driverLetter = GetDriveLetter(path);
 
-                if (driverLetter.TrimEnd('\\') == args.NewEvent.GetPropertyValue("DriveName").ToString())
-                {
-                    Task t = DownloadPhotos(ui);
-                    t.Wait();
-                    RemoveDrive();
-                }
-            };
+                                             if (driverLetter.TrimEnd('\\') ==
+                                                 args.NewEvent.GetPropertyValue("DriveName").ToString())
+                                             {
+                                                 Task t = DownloadPhotos(ui);
+                                                 t.Wait();
+                                                 RemoveDrive();
+                                             }
+                                         };
 
             _watcher.Query = query;
             _watcher.Start();
         }
+
+        protected override void OnStateChanged(EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+                Hide();
+
+            base.OnStateChanged(e);
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            //Do some stuff here 
+            //Hide Window
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, (DispatcherOperationCallback)delegate(object o)
+            {
+                Hide();
+                return null;
+            }, null);
+            //Do not close application
+            e.Cancel = true;
+
+
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _ni.Dispose();
+            _watcher.Dispose();
+        }
+
 
         private void Button1Click(object sender, RoutedEventArgs e)
         {
@@ -117,7 +163,6 @@ namespace SoPho
             {
                 status.Content = "Drive " + driverLetter + " doesn't exist.";
                 Console.WriteLine(status.Content);
-
             }
             else
             {
@@ -126,7 +171,6 @@ namespace SoPho
 
                 RemoveDrive();
             }
-
         }
 
         public void RemoveDrive()
@@ -145,9 +189,13 @@ namespace SoPho
                 var driveInfo = DriveInfo.GetDrives().First(x => x.Name == driverLetter);
                 if (driveInfo.DriveType != DriveType.Removable)
                 {
-                    status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = "Cannot remove " + driveInfo.DriveType + " disks. The process is done."));
+                    status.Dispatcher.Invoke(DispatcherPriority.Render,
+                                             new Action(
+                                                 () =>
+                                                 status.Content =
+                                                 "Cannot remove " + driveInfo.DriveType + " disks. The process is done."));
                     Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
-                    }
+                }
                 else
                 {
                     var processInfo =
@@ -158,14 +206,16 @@ namespace SoPho
 
                     if (!process.WaitForExit(10000))
                     {
-                        status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = driverLetter + " failed to eject."));
+                        status.Dispatcher.Invoke(DispatcherPriority.Render,
+                                                 new Action(() => status.Content = driverLetter + " failed to eject."));
                         Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
-                        }
+                    }
                     else
                     {
-                        status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = driverLetter + " has been ejected."));
+                        status.Dispatcher.Invoke(DispatcherPriority.Render,
+                                                 new Action(() => status.Content = driverLetter + " has been ejected."));
                         Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
-                        }
+                    }
                 }
             }
             status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = "Done!"));
@@ -187,7 +237,8 @@ namespace SoPho
 
         public Task DownloadPhotos(TaskScheduler uiTaskScheduler = null)
         {
-            status.Dispatcher.Invoke(DispatcherPriority.Render,new Action<string>(x=>status.Content=x),"Querying photos...");
+            status.Dispatcher.Invoke(DispatcherPriority.Render, new Action<string>(x => status.Content = x),
+                                     "Querying photos...");
             Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
 
             const string queryFormat =
@@ -299,5 +350,6 @@ namespace SoPho
                                       }
                                   }));
         }
+
     }
 }
