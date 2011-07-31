@@ -41,7 +41,7 @@ namespace SoPho
                     Show();
                     WindowState = WindowState.Normal;
                 };
-
+            
             _ni.ContextMenu = new ContextMenu(new[] { new MenuItem("Exit", (obj, arg) =>Application.Current.Shutdown()) });
 
             if (Settings.Default.FacebookUsersSettings == null)
@@ -165,6 +165,7 @@ namespace SoPho
             {
                 status.Content = "Drive " + driverLetter + " doesn't exist.";
                 Console.WriteLine(status.Content);
+                _ni.ShowBalloonTip(4, "Drive unavailable", status.Content.ToString(), ToolTipIcon.Error);
             }
             else
             {
@@ -184,6 +185,7 @@ namespace SoPho
                                                                                status.Content = "Removing media"
                                                                         ));
                 Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+                status.Dispatcher.Invoke(new Action(() => _ni.ShowBalloonTip(1, status.Content.ToString(), string.Empty, ToolTipIcon.Info)));
 
                 string path = Settings.Default.FacebookUsersSettings.PhotoDirectory;
                 var driverLetter = GetDriveLetter(path);
@@ -197,6 +199,7 @@ namespace SoPho
                                                  status.Content =
                                                  "Cannot remove " + driveInfo.DriveType + " disks. The process is done."));
                     Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+                    status.Dispatcher.Invoke(new Action(() => _ni.ShowBalloonTip(4, status.Content.ToString(), string.Empty, ToolTipIcon.Warning)));
                 }
                 else
                 {
@@ -211,17 +214,20 @@ namespace SoPho
                         status.Dispatcher.Invoke(DispatcherPriority.Render,
                                                  new Action(() => status.Content = driverLetter + " failed to eject."));
                         Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+                        status.Dispatcher.Invoke(new Action(() => _ni.ShowBalloonTip(4, status.Content.ToString(), string.Empty, ToolTipIcon.Error)));
                     }
                     else
                     {
                         status.Dispatcher.Invoke(DispatcherPriority.Render,
                                                  new Action(() => status.Content = driverLetter + " has been ejected."));
                         Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+                        status.Dispatcher.Invoke(new Action(() => _ni.ShowBalloonTip(4, status.Content.ToString(), string.Empty, ToolTipIcon.Info)));
                     }
                 }
             }
             status.Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => status.Content = "Done!"));
             Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+            status.Dispatcher.Invoke(new Action(() => _ni.ShowBalloonTip(4, status.Content.ToString(), string.Empty, ToolTipIcon.Info)));
         }
 
         public string GetDriveLetter(string path)
@@ -242,6 +248,7 @@ namespace SoPho
             status.Dispatcher.Invoke(DispatcherPriority.Render, new Action<string>(x => status.Content = x),
                                      "Querying photos...");
             Console.WriteLine(status.Dispatcher.Invoke(new Func<object>(() => status.Content)));
+            status.Dispatcher.Invoke(new Action(() => _ni.ShowBalloonTip(4, status.Content.ToString(), string.Empty, ToolTipIcon.Info)));
 
             const string queryFormat =
                 "SELECT src_big FROM photo WHERE pid IN (SELECT pid FROM photo_tag WHERE subject IN ({0})) AND created >= {1}";
@@ -270,6 +277,7 @@ namespace SoPho
             if (obj.Exception != null)
             {
                 status.Content = obj.Exception.Flatten().Message;
+
             }
         }
 
@@ -324,14 +332,17 @@ namespace SoPho
             if (task.Exception != null)
             {
                 status.Content = task.Exception.Flatten().Message;
+                _ni.ShowBalloonTip(4, status.Content.ToString(), string.Empty, ToolTipIcon.Error);
                 throw task.Exception.Flatten();
             }
             else
             {
                 status.Content = "Downloading photos...";
+                _ni.ShowBalloonTip(4, status.Content.ToString(), string.Empty, ToolTipIcon.Info);
             }
 
             Console.WriteLine(status.Content);
+            
         }
 
         private static void GetPicUrls(List<string> queries, ConcurrentBag<Uri> picsToGet, string seconds,
