@@ -39,7 +39,6 @@ namespace SoPho
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
             var mainWindow = new MainWindow();
             if (e.Args.Contains("auto"))
             {

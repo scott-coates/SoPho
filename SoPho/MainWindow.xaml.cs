@@ -32,7 +32,9 @@ namespace SoPho
         public MainWindow()
         {
             InitializeComponent();
-            _ni = new System.Windows.Forms.NotifyIcon { Icon = new System.Drawing.Icon("camera.ico"), Visible = true };
+            string cameraPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "camera.ico");
+            
+            _ni = new NotifyIcon { Icon = new System.Drawing.Icon(cameraPath), Visible = true };
             _ni.DoubleClick +=
                 delegate
                 {
